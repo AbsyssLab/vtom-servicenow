@@ -18,7 +18,7 @@ Il est possible de faire appel à des jours de consulting pour l'implémentation
 
   * Visual TOM 7.1.2 or supérieur
   * Instance ServiceNow avec API REST activée
-  * Champ personnalisé dans ServiceNow pour stocker le nom du traitement complet depuis Visual TOM
+  * Champ personnalisé dans ServiceNow pour stocker le nom de l'objet Visual TOM (Traitements, Applications, Agents, etc.)
 
 # Consignes
 
@@ -28,16 +28,16 @@ Vous pouvez choisir entre le script PowerShell ou le script Python en fonction d
 
 ### Script PowerShell
 1. Modifier le fichier config.ps1 avec vos identifiants ServiceNow et les noms des champs spécifiques
-2. Créer une alarme dans Visual TOM pour déclencher le script (exemple ci-dessous à adapter)
+2. Créer une alarme dans Visual TOM pour déclencher le script (exemple ci-dessous pour un traitement à adapter)
   ```powershell
-  powershell.exe -file FULL_PATH_TO_SCRIPT\ServiceNow_CreateTicket.ps1 -businessService "My Service" -shortDescription "Job has failed" -assignmentGroup "SAP L2" -category "1F Other Unknown Bugs / Errors" -callerId "charles.beckley@example.com" -jobName "{VT_FULL_JOBNAME}"
+  powershell.exe -file FULL_PATH_TO_SCRIPT\ServiceNow_CreateTicket.ps1 -businessService "My Service" -shortDescription "Job has failed" -assignmentGroup "SAP L2" -category "1F Other Unknown Bugs / Errors" -callerId "charles.beckley@example.com" -objectName "{VT_FULL_JOBNAME}"
   ```
 
 ### Script Python
 1. Modifier le fichier config.py avec vos identifiants ServiceNow et les noms des champs spécifiques
-2. Créer une alarme dans Visual TOM pour déclencher le script (exemple ci-dessous à adapter)
+2. Créer une alarme dans Visual TOM pour déclencher le script (exemple ci-dessous pour un traitement à adapter)
   ```python
-  python FULL_PATH_TO_SCRIPT/ServiceNow_CreateTicket.py -businessService "My Service" -shortDescription "Job has failed" -assignmentGroup "SAP L2" -category "1F Other Unknown Bugs / Errors" -callerId "charles.beckley@example.com" -jobName "{VT_FULL_JOBNAME}"
+  python FULL_PATH_TO_SCRIPT/ServiceNow_CreateTicket.py -businessService "My Service" -shortDescription "Job has failed" -assignmentGroup "SAP L2" -category "1F Other Unknown Bugs / Errors" -callerId "charles.beckley@example.com" -objectName "{VT_FULL_JOBNAME}"
   ```
 
 # Licence
