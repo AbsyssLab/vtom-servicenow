@@ -19,25 +19,57 @@ Il est possible de faire appel à des jours de consulting pour l'implémentation
   * Visual TOM 7.1.2 or supérieur
   * Instance ServiceNow avec API REST activée
   * Champ personnalisé dans ServiceNow pour stocker le nom de l'objet Visual TOM (Traitements, Applications, Agents, etc.)
+  * Python 3.10 ou supérieur ou PowerShell 7.0 ou supérieur
+    * La gestion des logs n'est pas disponible sur les serveurs Windows
 
 # Consignes
 
 Le script peut être personnalisé pour répondre à vos besoins concernant les champs ServiceNow. Vous pouvez trouver les champs dans le REST API explorer de votre instance ServiceNow ([[https://YOUR-INSTANCE.service-now.com/now/nav/ui/classic/params/target/%24restapi.do]]).
 
 Vous pouvez choisir entre le script PowerShell ou le script Python en fonction de votre environnement.
+Vous devez remplacer FULL_PATH_TO_SCRIPT, BUSINESS_SERVICE, SHORT_DESCRIPTION, ASSIGNMENT_GROUP, CATEGORY et CALLER_ID par vos valeurs.
 
 ### Script PowerShell
 1. Modifier le fichier config.ps1 avec vos identifiants ServiceNow et les noms des champs spécifiques
 2. Créer une alarme dans Visual TOM pour déclencher le script (exemple ci-dessous pour un traitement à adapter)
   ```powershell
-  powershell.exe -file FULL_PATH_TO_SCRIPT\ServiceNow_CreateTicket.ps1 -businessService "My Service" -shortDescription "Job has failed" -assignmentGroup "SAP L2" -category "1F Other Unknown Bugs / Errors" -callerId "charles.beckley@example.com" -objectName "{VT_FULL_JOBNAME}"
+  powershell.exe -file FULL_PATH_TO_SCRIPT\ServiceNow_CreateTicket.ps1 -businessService "BUSINESS_SERVICE" -shortDescription "Job {VT_JOB_FULLNAME} has failed" -assignmentGroup "ASSIGNMENT_GROUP" -category "CATEGORY" -callerId "absyss.vtom" -objectName "{VT_FULL_JOBNAME}"
   ```
 
 ### Script Python
 1. Modifier le fichier config.py avec vos identifiants ServiceNow et les noms des champs spécifiques
 2. Créer une alarme dans Visual TOM pour déclencher le script (exemple ci-dessous pour un traitement à adapter)
-  ```python
-  python FULL_PATH_TO_SCRIPT/ServiceNow_CreateTicket.py -businessService "My Service" -shortDescription "Job has failed" -assignmentGroup "SAP L2" -category "1F Other Unknown Bugs / Errors" -callerId "charles.beckley@example.com" -objectName "{VT_FULL_JOBNAME}"
+Pour les serveurs Unix, vous pouvez utiliser la commande suivante pour exécuter le script :
+  ```bash
+# Générer un nom de fichier aléatoire
+filename_out=$(mktemp "file_XXXXXX.txt")
+echo "$filename_out"
+# Créer un fichier avec EOF
+cat << EOF > /tmp/$filename_out
+{VT_JOB_LOG_OUT_CONTENT}
+EOF
+
+# Afficher le nom du fichier
+echo "Std out file: $filename_out"
+
+# Générer un nom de fichier aléatoire
+filename_err=$(mktemp "file_XXXXXX.txt")
+
+# Créer un fichier avec EOF
+cat << EOF > "/tmp/$filename_err"
+{VT_JOB_LOG_ERR_CONTENT}
+EOF
+
+# Afficher le nom du fichier
+echo "Error out file: $filename_err"
+python3 FULL_PATH_TO_SCRIPT/ServiceNow_CreateTicket.py --businessService BUSINESS_SERVICE --shortDescription "Job {VT_JOB_FULLNAME} has failed" --assignmentGroup ASSIGNMENT_GROUP --category CATEGORY --callerId "absyss.vtom" --objectName {VT_JOB_FULLNAME} --outAttachmentFile /tmp/$filename_out --outAttachmentName {VT_JOB_LOG_OUT_NAME}  --errorAttachmentFile /tmp/$filename_err --errorAttachmentName {VT_JOB_LOG_ERR_NAME}
+
+rm /tmp/$filename_out /tmp/$filename_err
+```
+
+Pour les serveurs Windows, vous pouvez utiliser la commande suivante pour exécuter le script :
+  ```shell
+  python3 FULL_PATH_TO_SCRIPT/ServiceNow_CreateTicket.py --businessService BUSINESS_SERVICE --shortDescription "Job {VT_JOB_FULLNAME} has failed" --assignmentGroup ASSIGNMENT_GROUP --category CATEGORY --callerId "absyss.vtom" --objectName {VT_JOB_FULLNAME}
   ```
 
 # Licence
