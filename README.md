@@ -3,9 +3,10 @@
 [![fr](https://img.shields.io/badge/lang-fr-yellow.svg)](README-fr.md)  
 
 This project provides scripts to create and manage ServiceNow tickets from Visual TOM.
-To avoid too many tickets, the script checks if a ticket already exists for the object name and is not closed.
-If it does, it will create a child ticket with the new information.
-If not, it will create a new ticket.
+To avoid too many tickets, the script checks if a ticket already exists for the object name and is not closed.  
+If it does, it will create a child ticket with the new information.  
+If not, it will create a new ticket.  
+If the OS of the Visual TOM server is Unix, the script will add the output and error logs as attachments to the ticket.
 
 # Disclaimer
 No Support and No Warranty are provided by Absyss SAS for this project and related material. The use of this project's files is at your own risk.
