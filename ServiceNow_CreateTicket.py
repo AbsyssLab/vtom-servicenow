@@ -1,3 +1,4 @@
+import os
 import requests
 import argparse
 
@@ -81,25 +82,38 @@ headers['Content-Type'] = 'image/jpeg'
 sys_id = response.json()['result']['sys_id']
 ticketNumber = response.json()['result']['number']
 
-if args.outAttachmentFile != "":
-    uri_full = f"https://{instance}.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id={sys_id}&file_name={args.outAttachmentName}.log"
-    with open(args.outAttachmentFile, 'rb') as file:
-        body = file.read()
-    response = requests.post(uri_full, headers=headers, data=body, auth=(user, password))
-    if response.status_code != 201:
-        print(f"Error: {response.status_code} - {response.text}")
+if args.outAttachmentFile != None:  # Add output attachment if specified
+    # Check if the file exists
+    if not os.path.exists(args.outAttachmentFile):
+        print(f"Error: File {args.outAttachmentFile} does not exist.")
         exit(1)
-    print(f"Ticket {ticketNumber} updated with attachment {args.outAttachmentName}.log.")
+    # Check if the file is empty
+    if os.path.getsize(args.outAttachmentFile) == 0:
+        print(f"Info: Output log file is empty. Skipping attachment.")
+    else:
+        uri_full = f"https://{instance}.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id={sys_id}&file_name={args.outAttachmentName}.log"
+        with open(args.outAttachmentFile, 'rb') as file:
+            body = file.read()
+        response = requests.post(uri_full, headers=headers, data=body, auth=(user, password))
+        if response.status_code != 201:
+            print(f"Error: {response.status_code} - {response.text}")
+            exit(1)
+        print(f"Ticket {ticketNumber} updated with attachment {args.outAttachmentName}.log.")
 
-if args.errorAttachmentFile != "":  # Add error attachment if specified
-    uri_full = f"https://{instance}.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id={sys_id}&file_name={args.errorAttachmentName}.log"
-    with open(args.errorAttachmentFile, 'rb') as file:
-        body = file.read()
-    if body.decode() != "{VT_JOB_LOG_ERR_CONTENT}\n":     #When empty error log, the file contains the name of the variable
+if args.errorAttachmentFile != None:  # Add error attachment if specified
+    # Check if the file exists
+    if not os.path.exists(args.errorAttachmentFile):
+        print(f"Error: File {args.errorAttachmentFile} does not exist.")
+        exit(1)
+    # Check if the file is empty
+    if os.path.getsize(args.errorAttachmentFile) == 0:
+        print(f"Info: Error log file is empty. Skipping attachment.")
+    else:
+        uri_full = f"https://{instance}.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id={sys_id}&file_name={args.errorAttachmentName}.log"
+        with open(args.errorAttachmentFile, 'rb') as file:
+            body = file.read()
         response = requests.post(uri_full, headers=headers, data=body, auth=(user, password))
         if response.status_code != 201:
             print(f"Error: {response.status_code} - {response.text}")
             exit(1)
         print(f"Ticket {ticketNumber} updated with attachment {args.errorAttachmentName}.log.")
-    else:
-        print("No error log to attach.")
