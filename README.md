@@ -3,10 +3,10 @@
 [![fr](https://img.shields.io/badge/lang-fr-yellow.svg)](README-fr.md)  
 
 This project provides scripts to create and manage ServiceNow tickets from Visual TOM.
-To avoid too many tickets, the script checks if a ticket already exists for the object name and is not closed.  
+To avoid too many isolated tickets, the script checks if a ticket already exists for the object name and is not closed.  
 If it does, it will create a child ticket with the new information.  
 If not, it will create a new ticket.  
-If the OS of the Visual TOM server is Unix, the script will add the output and error logs as attachments to the ticket.
+If provided, the script will add the output and error logs as attachments to the ticket.
 
 # Disclaimer
 No Support and No Warranty are provided by Absyss SAS for this project and related material. The use of this project's files is at your own risk.
@@ -17,15 +17,14 @@ Consultings days can be requested to help for the implementation.
 
 # Prerequisites
 
-  * Visual TOM 7.1.2 or greater
+  * Visual TOM 7.2.1f or greater (lower versions may work but without log attachment)
   * ServiceNow instance with REST API enabled
   * Custom field in ServiceNow to store the Visual TOM object name (Jobs, Applications, Agents, etc.)
   * Python 3.10 or greater or PowerShell 7.0 or greater
-    * Log management is not available on Windows server
 
 # Instructions
 
-The script can be customized to fit your needs for the ServiceNow fields. You can find the fields in the REST API explorer of your ServiceNow instance ([[https://YOUR-INSTANCE.service-now.com/now/nav/ui/classic/params/target/%24restapi.do]]).
+The script can be customized to fit your needs for the ServiceNow fields. You can find the fields in the REST API explorer of your ServiceNow instance (https://YOUR-INSTANCE.service-now.com/now/nav/ui/classic/params/target/%24restapi.do).
 
 You can choose between the PowerShell script or the Python script depending on your environment.  
 You need to replace FULL_PATH_TO_SCRIPT, BUSINESS_SERVICE, ASSIGNMENT_GROUP, CATEGORY and CALLER_ID by your values.
@@ -34,44 +33,15 @@ You need to replace FULL_PATH_TO_SCRIPT, BUSINESS_SERVICE, ASSIGNMENT_GROUP, CAT
 1. Edit the config.ps1 file with your ServiceNow credentials and specific field names
 2. Create an alarm in Visual TOM to trigger the script (example below for a job to be adapted)
   ```powershell
-  powershell.exe -file FULL_PATH_TO_SCRIPT\ServiceNow_CreateTicket.ps1 -businessService "BUSINESS_SERVICE" -shortDescription "Job {VT_JOB_FULLNAME} has failed" -assignmentGroup "ASSIGNMENT_GROUP" -category "CATEGORY" -callerId "absyss.vtom" -objectName "{VT_FULL_JOBNAME}"
+  powershell.exe -file FULL_PATH_TO_SCRIPT\ServiceNow_CreateTicket.ps1  -businessService "BUSINESS_SERVICE" -shortDescription "Job {VT_JOB_FULLNAME} has failed" -assignmentGroup "ASSIGNMENT_GROUP" -category "CATEGORY" -callerId "absyss.vtom" -objectName "{VT_JOB_FULLNAME}" -outAttachmentName "{VT_JOB_LOG_OUT_NAME}" -outAttachmentFile "{VT_JOB_LOG_OUT_FILE}" -errorAttachmentName "{VT_JOB_LOG_ERR_NAME}" -errorAttachmentFile "{VT_JOB_LOG_ERR_FILE}"
   ```
 
 ### Python Script
-1. Edit the config.py file with your ServiceNow credentials and specific field names
+1. Edit the config.py file with your ServiceNow credentials and specific field name
 2. Create an alarm in Visual TOM to trigger the script (example below for a job to be adapted)
-For Unix server, you can use the following command to run the script:
   ```bash
-# Generate random filename
-filename_out=$(mktemp "file_XXXXXX.txt")
-echo "$filename_out"
-# Create file with EOF
-cat << EOF > /tmp/$filename_out
-{VT_JOB_LOG_OUT_CONTENT}
-EOF
-
-# Display filename
-echo "Std out file: $filename_out"
-
-# Generate random filename
-filename_err=$(mktemp "file_XXXXXX.txt")
-
-# Create file with EOF
-cat << EOF > "/tmp/$filename_err"
-{VT_JOB_LOG_ERR_CONTENT}
-EOF
-
-# Display filename
-echo "Error out file: $filename_err"
-python3 FULL_PATH_TO_SCRIPT/ServiceNow_CreateTicket.py --businessService BUSINESS_SERVICE --shortDescription "Job {VT_JOB_FULLNAME} has failed" --assignmentGroup ASSIGNMENT_GROUP --category CATEGORY --callerId "absyss.vtom" --objectName {VT_JOB_FULLNAME} --outAttachmentFile /tmp/$filename_out --outAttachmentName {VT_JOB_LOG_OUT_NAME}  --errorAttachmentFile /tmp/$filename_err --errorAttachmentName {VT_JOB_LOG_ERR_NAME}
-
-rm /tmp/$filename_out /tmp/$filename_err
+python3 FULL_PATH_TO_SCRIPT/ServiceNow_CreateTicket.py --businessService BUSINESS_SERVICE --shortDescription "Job {VT_JOB_FULLNAME} has failed" --assignmentGroup ASSIGNMENT_GROUP --category CATEGORY --callerId "absyss.vtom" --objectName {VT_JOB_FULLNAME}  --outAttachmentName {VT_JOB_LOG_OUT_NAME} --outAttachmentFile {VT_JOB_LOG_OUT_FILE} --errorAttachmentName {VT_JOB_LOG_ERR_NAME}  --errorAttachmentFile {VT_JOB_LOG_ERR_FILE}
 ```
-
-For Windows server, you can use the following command to run the script:
-  ```shell
-  python3 FULL_PATH_TO_SCRIPT/ServiceNow_CreateTicket.py --businessService BUSINESS_SERVICE --shortDescription "Job {VT_JOB_FULLNAME} has failed" --assignmentGroup ASSIGNMENT_GROUP --category CATEGORY --callerId "absyss.vtom" --objectName {VT_JOB_FULLNAME}
-  ```
 
 # License
 This project is licensed under the Apache 2.0 License - see the [LICENSE](license) file for details

@@ -21,16 +21,20 @@
     [string]$errorAttachmentName
 )
 
-if ($outAttachmentFile -ne "" -and $outAttachmentName -eq "" -or $outAttachmentFile -eq "" -and $outAttachmentName -ne "") {
-    Write-Host "Error: --outAttachmentName is required when --outAttachmentFile is specified."
+if ($PSBoundParameters.ContainsKey('outAttachmentFile') -and -not $PSBoundParameters.ContainsKey('outAttachmentName') -or -not $PSBoundParameters.ContainsKey('outAttachmentFile') -and $PSBoundParameters.ContainsKey('outAttachmentName')) {
+    Write-Host "Error: -outAttachmentName is required when -outAttachmentFile is specified."
     exit
 }
-if ($errorAttachmentFile -ne "" -and $errorAttachmentName -eq "" -or $errorAttachmentFile -eq "" -and $errorAttachmentName -ne "") {
-    Write-Host "Error: --errorAttachmentName is required when --errorAttachmentFile is specified."
+if ($PSBoundParameters.ContainsKey('errorAttachmentFile') -and -not $PSBoundParameters.ContainsKey('errorAttachmentName') -or -not $PSBoundParameters.ContainsKey('errorAttachmentFile') -and $PSBoundParameters.ContainsKey('errorAttachmentName')) {
+    Write-Host "Error: -errorAttachmentName is required when -errorAttachmentFile is specified."
     exit
 }
 
 # Load config
+# Change to script folder
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $scriptPath
+
 . .\config.ps1
 
 # Build auth header
@@ -101,26 +105,49 @@ $sys_id = $response.result.sys_id
 $ticketNumber = $response.result.number
 
 if ($outAttachmentFile -ne "") {
-    try {
-        $uri_full = "https://$instance.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id=$sys_id&file_name=$($outAttachmentName).log"
-        $body = Get-Content -Path $outAttachmentFile -Raw
-        $response = Invoke-RestMethod -Headers $headers -Method "post" -Uri $uri_full -Body $body
-    } catch {
-        Write-Host "HTTP request failed with status code: " $_.Exception.Response.StatusCode.Value__
-        Write-Host "Response: " $_.Exception
+    # Check if the file exists
+    if (-not (Test-Path $outAttachmentFile)) {
+        Write-Host "Error: File $outAttachmentFile does not exist."
         exit
     }
-    Write-Host "Ticket $ticketNumber updated with attachment $($outAttachmentName).log."
+    
+    # Check if the file is empty
+    if ((Get-Item $outAttachmentFile).Length -eq 0) {
+        Write-Host "Info: Output log file is empty. Skipping attachment."
+    } else {
+        try {
+            $uri_full = "https://$instance.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id=$sys_id&file_name=$($outAttachmentName).log"
+            $body = Get-Content -Path $outAttachmentFile -Raw
+            $response = Invoke-RestMethod -Headers $headers -Method "post" -Uri $uri_full -Body $body
+            Write-Host "Ticket $ticketNumber updated with attachment $($outAttachmentName).log."
+        } catch {
+            Write-Host "HTTP request failed with status code: " $_.Exception.Response.StatusCode.Value__
+            Write-Host "Response: " $_.Exception
+            exit
+        }
+    }
 }
 
 if ($errorAttachmentFile -ne "") {  # Add error attachment if specified
-    try {
-        $uri_full = "https://$instance.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id=$sys_id&file_name=$($errorAttachmentName).log"
-        $response = Invoke-RestMethod -Headers $headers -Method "post" -Uri $uri_full -Body $body
-    } catch {
-        Write-Host "HTTP request failed with status code: " $_.Exception.Response.StatusCode.Value__
-        Write-Host "Response: " $_.Exception.Response
+    # Check if the file exists
+    if (-not (Test-Path $errorAttachmentFile)) {
+        Write-Host "Error: File $errorAttachmentFile does not exist."
         exit
     }
-    Write-Host "Ticket $ticketNumber updated with attachment $($errorAttachmentName).log."
+    
+    # Check if the file is empty
+    if ((Get-Item $errorAttachmentFile).Length -eq 0) {
+        Write-Host "Info: Error log file is empty. Skipping attachment."
+    } else {
+        try {
+            $uri_full = "https://$instance.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id=$sys_id&file_name=$($errorAttachmentName).log"
+            $body = Get-Content -Path $errorAttachmentFile -Raw
+            $response = Invoke-RestMethod -Headers $headers -Method "post" -Uri $uri_full -Body $body
+            Write-Host "Ticket $ticketNumber updated with attachment $($errorAttachmentName).log."
+        } catch {
+            Write-Host "HTTP request failed with status code: " $_.Exception.Response.StatusCode.Value__
+            Write-Host "Response: " $_.Exception.Response
+            exit
+        }
+    }
 }
